@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SpendingInsights } from '@/types';
-import { TrendingUp, TrendingDown, Target, ShoppingCart, Calendar, DollarSign } from 'lucide-react';
+import { IndianRupee, TrendingUp, TrendingDown, Target, ShoppingCart, Calendar } from 'lucide-react';
 
 interface SpendingInsightsProps {
   data: SpendingInsights;
@@ -10,9 +10,9 @@ interface SpendingInsightsProps {
 
 export function SpendingInsightsComponent({ data }: SpendingInsightsProps) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-IN', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'INR',
     }).format(amount);
   };
 
@@ -37,7 +37,7 @@ export function SpendingInsightsComponent({ data }: SpendingInsightsProps) {
                   {formatCurrency(data.currentMonthSpending)}
                 </p>
               </div>
-              <DollarSign className="h-8 w-8 text-blue-500" />
+              <IndianRupee className="h-8 w-8 text-blue-500" />
             </div>
           </CardContent>
         </Card>
