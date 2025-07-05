@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "builds": [
+    { "src": "next.config.js", "use": "@vercel/next" }
+  ],
+  "env": {
+    "MONGODB_URI": "",
+    "MONGODB_DB": ""
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "/" }
+  ]
+}

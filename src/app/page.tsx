@@ -1,103 +1,207 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { TransactionForm } from '@/components/TransactionForm';
+import { TransactionList } from '@/components/TransactionList';
+import { MonthlyExpensesChart } from '@/components/MonthlyExpensesChart';
+import { CategoryPieChart } from '@/components/CategoryPieChart';
+import { CategoryBreakdown } from '@/components/CategoryBreakdown';
+import { RecentTransactionsSummary } from '@/components/RecentTransactionsSummary';
+import { LoadingState } from '@/components/LoadingState';
+import { BudgetDashboard } from '@/components/BudgetDashboard';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Transaction, MonthlyExpense, CategoryExpense } from '@/types';
+import { Plus } from 'lucide-react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [monthlyData, setMonthlyData] = useState<MonthlyExpense[]>([]);
+  const [categoryData, setCategoryData] = useState<CategoryExpense[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+  const fetchTransactions = async () => {
+    try {
+      const response = await fetch('/api/transactions');
+      if (!response.ok) {
+        throw new Error('Failed to fetch transactions');
+      }
+      const data = await response.json();
+      setTransactions(data);
+    } catch {
+      setError('Failed to load transactions');
+    }
+  };
+
+  const fetchChartData = async () => {
+    try {
+      const response = await fetch('/api/charts');
+      if (!response.ok) {
+        throw new Error('Failed to fetch chart data');
+      }
+      const data = await response.json();
+      setMonthlyData(data.monthlyExpenses);
+      setCategoryData(data.categoryExpenses);
+    } catch {
+      setError('Failed to load chart data');
+    }
+  };
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    await Promise.all([fetchTransactions(), fetchChartData()]);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleAddTransaction = async (transaction: Omit<Transaction, '_id'>) => {
+    try {
+      const response = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(transaction),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add transaction');
+      }
+
+      await loadData();
+    } catch {
+      throw new Error('Failed to add transaction');
+    }
+  };
+
+  if (loading) {
+    return <LoadingState />;
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <Card>
+          <CardContent className="p-6 text-center text-red-600">
+            {error}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const totalIncome = transactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalExpenses = transactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+    }).format(amount);
+  };
+
+  return (
+    <div className="container mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Personal Finance Tracker</h1>
+        <TransactionForm
+          onSubmit={handleAddTransaction}
+          trigger={
+            <Button className="w-full sm:w-auto">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Transaction
+            </Button>
+          }
+        />
+      </div>
+
+      <Tabs defaultValue="dashboard" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <TabsTrigger value="budget">Budget & Insights</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="dashboard" className="space-y-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-green-600">
+                  Total Income
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(totalIncome)}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium text-red-600">
+                  Total Expenses
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-red-600">
+                  {formatCurrency(totalExpenses)}
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium">
+                  Net Balance
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${
+                  totalIncome - totalExpenses >= 0 ? 'text-green-600' : 'text-red-600'
+                }`}>
+                  {formatCurrency(totalIncome - totalExpenses)}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Dashboard Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            {/* Charts Column */}
+            <div className="xl:col-span-2 space-y-6">
+              <MonthlyExpensesChart data={monthlyData} />
+              <CategoryPieChart data={categoryData} />
+            </div>
+            
+            {/* Summary Column */}
+            <div className="space-y-6">
+              <CategoryBreakdown data={categoryData} />
+              <RecentTransactionsSummary transactions={transactions} />
+            </div>
+          </div>
+
+          {/* Transactions List */}
+          <div>
+            <h2 className="text-lg sm:text-xl font-semibold mb-4">All Transactions</h2>
+            <TransactionList transactions={transactions} onUpdate={loadData} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="budget">
+          <BudgetDashboard />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
